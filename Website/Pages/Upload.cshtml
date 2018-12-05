@@ -1,0 +1,129 @@
+@page "/upload"
+@using SharedLib
+
+<style>
+    input {
+        margin: 5px;
+    }
+</style>
+
+Test Name:
+<input type="text" bind="@_testName" />
+
+<br />
+@for (int i = 0; i < _questions.Count; i++)
+{
+    <div>
+        Question: @_questions[i].Value
+        <br />
+        Answer: @(_questions[i].Answer+1)
+        <br />
+        @for (int j = 0; j < _questions[i].Options.Count; j++)
+        {
+            @: &#91;@(j+1)&#93; @(_questions[i].Options[j])
+        }
+        <hr/>
+    </div>
+}
+
+Question: @_questionName
+<br/>
+@for (int i = 0; i < _questionOptions.Count; i++)
+{
+    @: &#91;@(i+1)&#93; @(_questionOptions[i])
+    <br/>
+}
+<hr/>
+
+<div hidden="@inputNameFlag">
+    <input type="text" bind="@_questionName" placeholder="question name"/>
+    <input type="button" class="btn btn-primary" value="Set Question Name" onclick="@SetQuestionName"/>
+</div>
+
+<div hidden="@addOptionFlag">
+    <input type="text" bind="@_option" placeholder="option"/>
+    <br/>
+    <input type="button" class="btn btn-primary" value="Set Option" onclick="@SetOption"/>
+    <input type="button" class="btn btn-primary" value="Go to Answer" onclick="@SetAnswer"/>
+</div>
+
+<div hidden="@setAnswerFlag">
+    <input type="number" bind="@_answer" min="1" max="@_optionCount"/>
+    <br/>
+    <input type="button" class="btn btn-primary"  value="Save Question" onclick="@AddQuestion"/>
+</div>
+
+
+<input type="button" class="btn btn-primary"  value="Save Test" onclick="@Save"/>
+
+@functions {
+
+    // Flags
+    private bool inputNameFlag {get;set;} = false;
+    private bool addOptionFlag {get;set;} = true;
+    private bool setAnswerFlag {get;set;} = true;
+
+    private void ResetFlags() {
+        inputNameFlag = false;
+        addOptionFlag = true;
+        setAnswerFlag = true;
+    }
+
+    private void SetQuestionName() {
+        inputNameFlag = true;
+        addOptionFlag = false;
+    }
+
+    private void SetOption() {
+        _questionOptions.Add(_option);
+        _option = string.Empty;
+    }
+
+    private void SetAnswer() {
+        addOptionFlag = true;
+        setAnswerFlag = false;
+    }
+
+    private int _answer {get;set;} = 1;
+    private string _questionName { get; set;}
+    private string _option {get;set;}
+    private List<string> _questionOptions {get;set;} = new List<string>();
+
+
+    private string _testName {get;set;}
+    private List<Question> _questions = new List<Question>();
+
+    private int _optionCount => _questionOptions.Count > 1 ? _questionOptions.Count : 1;
+
+    private void AddQuestion()
+    {
+        _questionOptions.ForEach(Console.WriteLine);
+        _questions.Add(new Question(){
+            Answer=_answer-1,
+            Value=_questionName,
+            Options=_questionOptions.Select(x => x).ToList()
+        });
+        ClearQuestionInput();
+        ResetFlags();
+    }
+
+    private void ClearQuestionInput() {
+        _questionName = string.Empty;
+        _answer = 1;
+        _questionOptions.Clear();
+    }
+
+    private async Task Save() {
+        var client = new HttpClient() {
+            BaseAddress=new Uri("http://localhost:5000")
+        };
+        await client.SendJsonAsync(HttpMethod.Post, "/api/Quiz", new Quiz() {
+            Name = _testName,
+            Questions = _questions
+        });
+        
+        ClearQuestionInput();
+        _testName = (default);
+        _questions = new List<Question>();
+    }
+}

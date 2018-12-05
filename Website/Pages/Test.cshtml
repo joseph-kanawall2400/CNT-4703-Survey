@@ -1,0 +1,67 @@
+@page "/tests/{id}"
+@using SharedLib
+
+<style>
+
+    div { margin: .5em; }
+    input, label {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    input[type=radio] { margin-right: -1.65em; z-index: 2; }
+    .radiostyle{
+        background-color: #CCC;
+        border-radius: 8px;
+        padding: 4px 4px 4px 1.75em;
+    }
+
+    .correct:checked+label {
+        background-color: green;
+    }
+
+    .wrong:checked+label {
+        background-color: red;
+    }
+</style>
+
+@if (quiz is null)
+{
+    <h1 style="color:red">Invalid Quiz Url</h1>
+}
+else
+{
+    <h1>@quiz.Name</h1>
+
+    @foreach (var question in quiz.Questions)
+    {
+        @question.Value
+        <br/>
+        @for (int i = 0; i < question.Options.Count; i++)
+        {
+            var guid = Guid.NewGuid().ToString();
+            <div>
+                <input type="radio" class='@(i == question.Answer ? "correct" : "wrong")' name="@question.Value" id="@guid">
+                <label for="@guid"  class='radiostyle'>@question.Options[i]</label>
+            </div>
+        }
+        <hr/>
+    }
+}
+
+
+@functions {
+    [Parameter]
+    private string Id {get;set;}
+
+    private Quiz quiz {get;set;}
+
+    protected override async Task OnInitAsync() {
+        var client = new HttpClient() {
+            BaseAddress=new Uri("http://localhost:5000")
+        };
+        var result = await client.GetJsonAsync<Quiz>($"/api/quiz/{Id}");
+        Console.WriteLine(result?.ToString() ?? "null");
+            quiz = result;
+    }
+}

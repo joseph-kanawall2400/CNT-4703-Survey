@@ -1,0 +1,35 @@
+@page "/tests"
+@using SharedLib
+@using Newtonsoft.Json
+
+<style>
+    a {
+        margin: 5px;
+    }
+</style>
+
+
+<h3>Below are possible quizzes to see</h3>
+<br/>
+
+@foreach (var quiz in quizzes)
+{
+    <a href="/tests/@quiz.Id">@quiz.Name w/ @quiz.Questions.Count questions</a>
+    <br/>
+}
+
+@functions{
+    List<Quiz> quizzes {get;set;} = new List<Quiz>();
+    HttpClient client = new HttpClient() {
+        BaseAddress=new Uri("http://localhost:5000")
+    };
+
+    protected override async Task OnInitAsync() {
+        quizzes.Clear();
+        var ids = await client.GetJsonAsync<List<string>>("/api/Quiz");
+        foreach (var id in ids)
+        {
+            quizzes.Add(await client.GetJsonAsync<Quiz>($"/api/quiz/{id}"));
+        }
+    }
+}
