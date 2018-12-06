@@ -58,7 +58,7 @@ else
 
     protected override async Task OnInitAsync() {
         var client = new HttpClient() {
-            BaseAddress=new Uri("http://localhost:5000")
+            BaseAddress=new Uri("http://www.jkanawall.net:5000")
         };
         var result = await client.GetJsonAsync<Quiz>($"/api/quiz/{Id}");
         Console.WriteLine(result?.ToString() ?? "null");
